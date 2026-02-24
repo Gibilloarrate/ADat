@@ -35,7 +35,7 @@
 # Leemos la tabla.
 {
   elecciones_total <- read.table(
-    file = "C:\\Users\\belen\\Downloads\\Trabajo ADat - a rellenar_en proceso.tsv",
+    file = "https://raw.githubusercontent.com/Gibilloarrate/ADat/main/datos.tsv",
     header = TRUE,
     skip = 3,
     dec = ',',
