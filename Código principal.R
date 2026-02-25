@@ -35,7 +35,7 @@
 # Leemos la tabla.
 {
   elecciones_total <- read.table(
-    file = "//Users//sergio//Downloads//Trabajo ADat - a rellenar_en proceso.tsv",
+    file = "https://raw.githubusercontent.com/Gibilloarrate/ADat/main/datos.tsv",
     header = TRUE,
     skip = 3,
     dec = ',',
@@ -254,7 +254,8 @@ elecciones_cuant <- elecciones_final[, sapply(elecciones_final, is.numeric)]
 }
 
 #Calculamos la correlacion(dependencia con la prueba del chi cuadrado)
-tabla_cruce <- table(elecciones_final$nivel_mun, elecciones_final$nivel_comun_edu)
+tabla_cruce <- table(elecciones_final$nivel_mun,
+                     elecciones_final$nivel_comun_edu)
 test_chi <- chisq.test(tabla_cruce)
 print(test_chi)
 
