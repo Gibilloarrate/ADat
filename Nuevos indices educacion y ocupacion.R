@@ -12,8 +12,9 @@
       "VIM",
       "plotly",
       "crosstalk",
-      "pacthwork",
-      "scales"
+      "patchwork",
+      "scales",
+      "Hmisc"
     )
   )
   
@@ -30,6 +31,7 @@
   library(crosstalk)
   library(patchwork)
   library(scales)
+  library(Hmisc)
 }
 
 # Leemos la tabla.
@@ -50,7 +52,7 @@
   
   # Eliminamos los datos de las secciones censales en el extranjero.
   elecciones <- elecciones_total[elecciones_total$secc_exterior != "Sí", ]
-
+  
 }
 
 # Arreglando variables:
@@ -97,6 +99,150 @@
   elecciones$renta <- as.numeric(elecciones$renta)
 }
 
-# Calculamos un indicador de educación ponderando cada
+# Calculamos indicadores de estudios y ocupación ponderados
+{
+  elecciones$años_medios_de_estudios <- (
+    6 * elecciones$edu_primaria + 10 * elecciones$edu_eso + 12 *
+      elecciones$edu_bachiller + 16 * elecciones$edu_superior
+  ) / elecciones$pob_mas_de_15
+  summary(elecciones$años_medios_de_estudios)
+  
+  elecciones$indice_laboral <- (
+    elecciones$ocupados_nivel_bajo * 2 + elecciones$ocupados_nivel_medio *
+      4 + elecciones$ocupados_nivel_alto * 7
+  ) / elecciones$ocupados_total
+}
 
-elecciones$años_medios_de_estudios <- 6 * elecciones$edu_primaria+elecciones$edu_eso+elecciones$edu_bachiller+elecciones$edu_superior
+elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo
+
+# Estudio normalidad algunas variables
+{
+  dev.off()
+  # 1. Ajustamos a 4 gráficos y reducimos los márgenes (Abajo, Izquierda, Arriba, Derecha)
+  par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+  
+  # 2. Dibujamos los 4 gráficos
+  hist(
+    elecciones$años_medios_de_estudios,
+    main = "Hist: Años Estudio",
+    xlab = "Años",
+    col = "lightblue"
+  )
+  qqnorm(elecciones$años_medios_de_estudios, main = "QQ: Años Estudio")
+  qqline(elecciones$años_medios_de_estudios, col = "red")
+  
+  hist(
+    elecciones$indice_laboral,
+    main = "Hist: Índice Laboral",
+    xlab = "Índice",
+    col = "lightgreen"
+  )
+  qqnorm(elecciones$indice_laboral, main = "QQ: Índice Laboral")
+  qqline(elecciones$indice_laboral, col = "red")
+  
+  # 3. Restauramos la ventana a 1 solo gráfico normal
+  par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
+}
+
+{
+  # Cargamos la librería necesaria
+  library(Hmisc)
+  
+  # 1. Calculamos los cortes ponderados ignorando los NAs (na.rm = TRUE)
+  cortes_pond_est <- wtd.quantile(
+    elecciones$años_medios_de_estudios,
+    weights = elecciones$pob_mas_de_15,
+    probs = seq(0, 1, 0.2),
+    na.rm = TRUE
+  )
+  
+  # 2. Creamos la variable con tus etiquetas
+  elecciones$nivel_estudios <- cut(
+    elecciones$años_medios_de_estudios,
+    breaks = cortes_pond_est,
+    include.lowest = TRUE,
+    labels = c("Más bajo", "Bajo", "Medio", "Alto", "Más alto")
+  )
+  
+  # 1. Calculamos los cortes ponderados ignorando los NAs (na.rm = TRUE)
+  cortes_pond_ocu <- wtd.quantile(
+    elecciones$indice_laboral,
+    weights = elecciones$ocupados_total,
+    probs = seq(0, 1, 0.2),
+    na.rm = TRUE
+  )
+  
+  # 2. Creamos la variable con tus etiquetas
+  elecciones$nivel_laboral <- cut(
+    elecciones$indice_laboral,
+    breaks = cortes_pond_ocu,
+    include.lowest = TRUE,
+    labels = c("Más bajo", "Bajo", "Medio", "Alto", "Más alto")
+  )
+}
+
+
+{
+  # Cargar la librería
+  library(dplyr)
+  
+  # Crear una tabla resumen agrupada
+  resumen_por_nivel <- elecciones %>%
+    filter(!is.na(nivel_educativo)) %>% # Quitamos los nulos para que la tabla quede limpia
+    group_by(nivel_educativo) %>%
+    summarise(
+      num_secciones = n(),
+      # Cuántas zonas hay en este grupo
+      poblacion_total = sum(pob_mas_de_15, na.rm = TRUE),
+      # Cuánta gente vive en este grupo
+      abstencion_media = mean(tasa_abstencion_23, na.rm = TRUE),
+      # Abstención promedio
+      anos_estudio_medios = mean(años_medios_de_estudios, na.rm = TRUE) # Para comprobar que el orden tiene sentido
+    )
+  
+  # Ver el resultado
+  print(resumen_por_nivel)
+}
+
+{
+  dev.off()
+  library(patchwork)
+  library(ggplot2)
+  library(dplyr)
+  
+  p1 <- ggplot(
+    elecciones %>% filter(!is.na(nivel_estudios)),
+    aes(x = nivel_estudios, y = tasa_abstencion_23, fill = nivel_estudios)
+  ) +
+    geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
+                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Educación: Quintiles", x = "", y = "Abstención")
+  
+  p2 <- ggplot(
+    elecciones %>% filter(!is.na(nivel_comun_edu)),
+    aes(x = nivel_comun_edu, y = tasa_abstencion_23, fill = nivel_comun_edu)
+  ) +
+    geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
+                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Educación: Nivel Común", x = "", y = "")
+  
+  p3 <- ggplot(
+    elecciones %>% filter(!is.na(nivel_laboral)),
+    aes(x = nivel_laboral, y = tasa_abstencion_23, fill = nivel_laboral)
+  ) +
+    geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
+                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Laboral: Nivel Laboral", x = "", y = "Abstención")
+  
+  p4 <- ggplot(
+    elecciones %>% filter(!is.na(nivel_comun_ocupados)),
+    aes(x = nivel_comun_ocupados, y = tasa_abstencion_23, fill = nivel_comun_ocupados)
+  ) +
+    geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
+                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(title = "Laboral: Ocupación Mayoritaria", x = "", y = "")
+  
+  # Forzar la visualización de los 4 paneles
+  grafico_cuadruple <- (p1 | p2) / (p3 | p4)
+  print(grafico_cuadruple)
+}
