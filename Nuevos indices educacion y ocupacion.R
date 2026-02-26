@@ -97,6 +97,8 @@
   
   # Identificando como continua una marcada como discreta:
   elecciones$renta <- as.numeric(elecciones$renta)
+  
+  elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo * 100
 }
 
 # Calculamos indicadores de estudios y ocupación ponderados
@@ -113,11 +115,8 @@
   ) / elecciones$ocupados_total
 }
 
-elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo
-
 # Estudio normalidad algunas variables
 {
-  dev.off()
   # 1. Ajustamos a 4 gráficos y reducimos los márgenes (Abajo, Izquierda, Arriba, Derecha)
   par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
   
@@ -188,8 +187,8 @@ elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo
   
   # Crear una tabla resumen agrupada
   resumen_por_nivel <- elecciones %>%
-    filter(!is.na(nivel_educativo)) %>% # Quitamos los nulos para que la tabla quede limpia
-    group_by(nivel_educativo) %>%
+    filter(!is.na(nivel_estudios)) %>% # Quitamos los nulos para que la tabla quede limpia
+    group_by(nivel_estudios) %>%
     summarise(
       num_secciones = n(),
       # Cuántas zonas hay en este grupo
@@ -205,7 +204,6 @@ elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo
 }
 
 {
-  dev.off()
   library(patchwork)
   library(ggplot2)
   library(dplyr)
@@ -215,7 +213,7 @@ elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo
     aes(x = nivel_estudios, y = tasa_abstencion_23, fill = nivel_estudios)
   ) +
     geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
-                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+                                                        axis.text.x = element_text(angle = 15, hjust = 1)) +
     labs(title = "Educación: Quintiles", x = "", y = "Abstención")
   
   p2 <- ggplot(
@@ -223,15 +221,20 @@ elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo
     aes(x = nivel_comun_edu, y = tasa_abstencion_23, fill = nivel_comun_edu)
   ) +
     geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
-                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+                                                        axis.text.x = element_text(angle = 15, hjust = 1)) +
     labs(title = "Educación: Nivel Común", x = "", y = "")
   
+  grafico_1 <- (p1 | p2)
+  print(grafico_1)
+}
+
+{
   p3 <- ggplot(
     elecciones %>% filter(!is.na(nivel_laboral)),
     aes(x = nivel_laboral, y = tasa_abstencion_23, fill = nivel_laboral)
   ) +
     geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
-                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+                                                        axis.text.x = element_text(angle = 15, hjust = 1)) +
     labs(title = "Laboral: Nivel Laboral", x = "", y = "Abstención")
   
   p4 <- ggplot(
@@ -239,10 +242,10 @@ elecciones$tasa_abstencion_23 <- elecciones$abs / elecciones$censo
     aes(x = nivel_comun_ocupados, y = tasa_abstencion_23, fill = nivel_comun_ocupados)
   ) +
     geom_boxplot(alpha = 0.7) + theme_minimal() + theme(legend.position = "none",
-                                                        axis.text.x = element_text(angle = 45, hjust = 1)) +
+                                                        axis.text.x = element_text(angle = 15, hjust = 1)) +
     labs(title = "Laboral: Ocupación Mayoritaria", x = "", y = "")
   
   # Forzar la visualización de los 4 paneles
-  grafico_cuadruple <- (p1 | p2) / (p3 | p4)
-  print(grafico_cuadruple)
+  grafico_2 <- (p3 | p4)
+  print(grafico_2)
 }
