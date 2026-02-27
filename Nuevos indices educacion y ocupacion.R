@@ -104,14 +104,14 @@
 # Calculamos indicadores de estudios y ocupación ponderados
 {
   elecciones$años_medios_de_estudios <- (
-    6 * elecciones$edu_primaria + 10 * elecciones$edu_eso + 12 *
+    0 * elecciones$edu_primaria + 8 * elecciones$edu_eso + 12 *
       elecciones$edu_bachiller + 16 * elecciones$edu_superior
   ) / elecciones$pob_mas_de_15
   summary(elecciones$años_medios_de_estudios)
   
   elecciones$indice_laboral <- (
-    elecciones$ocupados_nivel_bajo * 2 + elecciones$ocupados_nivel_medio *
-      4 + elecciones$ocupados_nivel_alto * 7
+    elecciones$ocupados_nivel_bajo * 1 + elecciones$ocupados_nivel_medio *
+      2 + elecciones$ocupados_nivel_alto * 5
   ) / elecciones$ocupados_total
 }
 
@@ -249,3 +249,24 @@
   grafico_2 <- (p3 | p4)
   print(grafico_2)
 }
+
+# 1. Creamos los modelos (asegurándonos de que R entienda que son categorías/factores)
+modelo_edu_quintil  <- lm(tasa_abstencion_23 ~ as.factor(nivel_estudios), data = elecciones, weights = censo)
+modelo_edu_comun    <- lm(tasa_abstencion_23 ~ as.factor(nivel_comun_edu), data = elecciones, weights = censo)
+modelo_lab_ordinal  <- lm(tasa_abstencion_23 ~ as.factor(nivel_laboral), data = elecciones, weights = censo)
+modelo_lab_comun  <- lm(tasa_abstencion_23 ~ as.factor(nivel_comun_ocupados), data = elecciones, weights = censo)
+
+
+# 2. Extraemos los R-cuadrados ajustados
+r2_edu_quintil <- summary(modelo_edu_quintil)$adj.r.squared
+r2_edu_comun   <- summary(modelo_edu_comun)$adj.r.squared
+r2_lab_ordinal <- summary(modelo_lab_ordinal)$adj.r.squared
+r2_lab_comun <- summary(modelo_lab_comun)$adj.r.squared
+
+
+# 3. Los mostramos en porcentajes para compararlos fácilmente
+cat("\n--- % DE ABSTENCIÓN EXPLICADO (R-cuadrado Ajustado) ---\n")
+cat("Quintiles Educativos:  ", round(r2_edu_quintil * 100, 2), "%\n")
+cat("Nivel Común Educativo: ", round(r2_edu_comun * 100, 2), "%\n")
+cat("Quintiles Laborales:     ", round(r2_lab_ordinal * 100, 2), "%\n")
+cat("Nivel Común Laboral:     ", round(r2_lab_comun * 100, 2), "%\n")
