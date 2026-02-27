@@ -12,7 +12,7 @@
       "VIM",
       "plotly",
       "crosstalk",
-      "pacthwork",
+      "patchwork",
       "scales"
     )
   )
