@@ -1,4 +1,4 @@
-# Liberías que vamos a usar.
+# Librerías que vamos a usar.
 {
   install.packages(
     c(
@@ -48,6 +48,13 @@
     comment.char = "",
     fill = TRUE,
     stringsAsFactors = TRUE,
+    colClasses = c(
+      "cod_sscc" = "character",
+      "cod_ccaa" = "character",
+      "cod_prov" = "character",
+      "cod_mun"  = "character",
+      "cod_dist" = "character"
+    ),
   )
   
   # Eliminamos los datos de las secciones censales en el extranjero.
@@ -59,6 +66,13 @@
 {
   # Cualitativas nominales:
   
+  # Reconstrucción de códigos tras la lectura
+  elecciones$cod_ccaa <- substr(paste0("00", elecciones$cod_ccaa), nchar(paste0("00", elecciones$cod_ccaa)) - 1, nchar(paste0("00", elecciones$cod_ccaa)))
+  elecciones$cod_prov <- substr(paste0("00", elecciones$cod_prov), nchar(paste0("00", elecciones$cod_prov)) - 1, nchar(paste0("00", elecciones$cod_prov)))
+  elecciones$cod_mun <- substr(paste0("00000", elecciones$cod_mun), nchar(paste0("00000", elecciones$cod_mun)) - 4, nchar(paste0("00000", elecciones$cod_mun)))
+  elecciones$cod_dist <- substr(paste0("0000000", elecciones$cod_dist), nchar(paste0("0000000", elecciones$cod_dist)) - 6, nchar(paste0("0000000", elecciones$cod_dist)))
+  elecciones$cod_sscc <- substr(paste0("0000000000", elecciones$cod_sscc), nchar(paste0("0000000000", elecciones$cod_sscc)) - 9, nchar(paste0("0000000000", elecciones$cod_sscc)))
+
   nominales <- c("cod_sscc", "cod_ccaa", "cod_prov", "cod_mun", "cod_dist")
   elecciones[nominales] <- lapply(elecciones[nominales], factor)
   
@@ -104,14 +118,14 @@
 # Calculamos indicadores de estudios y ocupación ponderados
 {
   elecciones$años_medios_de_estudios <- (
-    0 * elecciones$edu_primaria + 8 * elecciones$edu_eso + 12 *
+    4.5 * elecciones$edu_primaria + 9 * elecciones$edu_eso + 12 *
       elecciones$edu_bachiller + 16 * elecciones$edu_superior
   ) / elecciones$pob_mas_de_15
   summary(elecciones$años_medios_de_estudios)
   
   elecciones$indice_laboral <- (
-    elecciones$ocupados_nivel_bajo * 1 + elecciones$ocupados_nivel_medio *
-      2 + elecciones$ocupados_nivel_alto * 5
+    elecciones$ocupados_nivel_bajo * 15 + elecciones$ocupados_nivel_medio *
+      35 + elecciones$ocupados_nivel_alto * 70
   ) / elecciones$ocupados_total
 }
 
@@ -151,7 +165,7 @@
   cortes_pond_est <- wtd.quantile(
     elecciones$años_medios_de_estudios,
     weights = elecciones$pob_mas_de_15,
-    probs = seq(0, 1, 0.2),
+    probs = seq(0, 1, length.out = 5),
     na.rm = TRUE
   )
   
@@ -160,14 +174,14 @@
     elecciones$años_medios_de_estudios,
     breaks = cortes_pond_est,
     include.lowest = TRUE,
-    labels = c("Más bajo", "Bajo", "Medio", "Alto", "Más alto")
+    labels = c("Bajo", "Bajo-Medio", "Medio-Alto", "Alto")
   )
   
   # 1. Calculamos los cortes ponderados ignorando los NAs (na.rm = TRUE)
   cortes_pond_ocu <- wtd.quantile(
     elecciones$indice_laboral,
     weights = elecciones$ocupados_total,
-    probs = seq(0, 1, 0.2),
+    probs = seq(0, 1, length.out = 4),
     na.rm = TRUE
   )
   
@@ -176,7 +190,7 @@
     elecciones$indice_laboral,
     breaks = cortes_pond_ocu,
     include.lowest = TRUE,
-    labels = c("Más bajo", "Bajo", "Medio", "Alto", "Más alto")
+    labels = c("Bajo", "Medio", "Alto")
   )
 }
 
@@ -251,10 +265,24 @@
 }
 
 # 1. Creamos los modelos (asegurándonos de que R entienda que son categorías/factores)
-modelo_edu_quintil  <- lm(tasa_abstencion_23 ~ as.factor(nivel_estudios), data = elecciones, weights = censo)
-modelo_edu_comun    <- lm(tasa_abstencion_23 ~ as.factor(nivel_comun_edu), data = elecciones, weights = censo)
-modelo_lab_ordinal  <- lm(tasa_abstencion_23 ~ as.factor(nivel_laboral), data = elecciones, weights = censo)
-modelo_lab_comun  <- lm(tasa_abstencion_23 ~ as.factor(nivel_comun_ocupados), data = elecciones, weights = censo)
+modelo_edu_quintil  <- lm(
+  tasa_abstencion_23 ~ as.factor(nivel_estudios),
+  data = elecciones,
+  weights = censo
+)
+modelo_edu_comun    <- lm(
+  tasa_abstencion_23 ~ as.factor(nivel_comun_edu),
+  data = elecciones,
+  weights = censo
+)
+modelo_lab_ordinal  <- lm(tasa_abstencion_23 ~ as.factor(nivel_laboral),
+                          data = elecciones,
+                          weights = censo)
+modelo_lab_comun  <- lm(
+  tasa_abstencion_23 ~ as.factor(nivel_comun_ocupados),
+  data = elecciones,
+  weights = censo
+)
 
 
 # 2. Extraemos los R-cuadrados ajustados
@@ -266,7 +294,7 @@ r2_lab_comun <- summary(modelo_lab_comun)$adj.r.squared
 
 # 3. Los mostramos en porcentajes para compararlos fácilmente
 cat("\n--- % DE ABSTENCIÓN EXPLICADO (R-cuadrado Ajustado) ---\n")
-cat("Quintiles Educativos:  ", round(r2_edu_quintil * 100, 2), "%\n")
+cat("Cuartiles Educativos:  ", round(r2_edu_quintil * 100, 2), "%\n")
 cat("Nivel Común Educativo: ", round(r2_edu_comun * 100, 2), "%\n")
-cat("Quintiles Laborales:     ", round(r2_lab_ordinal * 100, 2), "%\n")
+cat("Terciles Laborales:     ", round(r2_lab_ordinal * 100, 2), "%\n")
 cat("Nivel Común Laboral:     ", round(r2_lab_comun * 100, 2), "%\n")
