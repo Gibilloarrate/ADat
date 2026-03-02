@@ -1,4 +1,4 @@
-# Liberías que vamos a usar.
+# Librerías que vamos a usar.
 {
   install.packages(
     c(
