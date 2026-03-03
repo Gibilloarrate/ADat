@@ -157,6 +157,7 @@
   par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
 }
 
+# Creación de las variables ordinales
 {
   # Cargamos la librería necesaria
   library(Hmisc)
@@ -208,10 +209,24 @@
       # Cuántas zonas hay en este grupo
       poblacion_total = sum(pob_mas_de_15, na.rm = TRUE),
       # Cuánta gente vive en este grupo
-      abstencion_media = mean(tasa_abstencion_23, na.rm = TRUE),
-      # Abstención promedio
-      anos_estudio_medios = mean(años_medios_de_estudios, na.rm = TRUE) # Para comprobar que el orden tiene sentido
+      años_estudio_min = min(años_medios_de_estudios, na.rm = TRUE),
+      años_estudio_media = mean(años_medios_de_estudios, na.rm = TRUE),
+      años_estudio_max = max(años_medios_de_estudios, na.rm = TRUE),
     )
+  print(resumen_por_nivel)
+  
+  resumen_por_nivel <- elecciones %>%
+    filter(!is.na(nivel_laboral)) %>% # Quitamos los nulos para que la tabla quede limpia
+    group_by(nivel_laboral) %>%
+    summarise(
+      num_secciones = n(),
+      # Cuántas zonas hay en este grupo
+      poblacion_total = sum(ocupados_total, na.rm = TRUE),
+      # Cuánta gente vive en este grupo
+      años_estudio_min = min(indice_laboral, na.rm = TRUE),
+      años_estudio_media = mean(indice_laboral, na.rm = TRUE),
+      años_estudio_max = max(indice_laboral, na.rm = TRUE),
+    )  
   
   # Ver el resultado
   print(resumen_por_nivel)
