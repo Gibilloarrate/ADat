@@ -212,7 +212,7 @@ De igual manera que en el caso previo, asociamos un valor numérico a cada tipo 
   </tbody>
 </table>
 
-Creamos nuestra variable ordinal en torno a terciles, que se describen aquí:
+Creamos nuestra variable ordinal `nivel_laboral` agrupando los valores en terciles ponderados por el número total de ocupados, que se describen aquí:
 
 | `nivel_laboral` |	 Secciones en cuantil |  	 Ocupados |  	 Mínimo del cuantil |  	 Media del cuantil |  	 Máximo del cuantil |
 | :--- | ---: | ---: | ---: | ---: | ---: |
