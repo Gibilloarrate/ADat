@@ -9,7 +9,7 @@ Queremos incorporar una variable cualitativa ordinal que represente el nivel de 
 | Segunda etapa de Educación Secundaria y Postsecundaria no Superior | 	4º ESO, Bachillerato, o FP Media | edu_bachiller |
 | Educación Superior | 	Grado universitario, posgrado, o FP Superior | edu_superior |
 
-En un primer momento íbamos a tomar como representante de cada sección el porcentaje más alto: sin embargo, creemos que simplifica en exceso la realidad social española: omite una gran parte de los valores disponibles, pudiendo hacer similares secciones que solo se parecen en el nivel más común, por ejemplo. En vez de eso, creamos un índice compuesto que pondera cada categoría de la siguiente manera:
+En un primer momento íbamos a tomar como representante de cada sección el nivel de estudios más común en esta: sin embargo, creemos que simplifica en exceso la realidad social española: omite una gran parte de los valores disponibles, pudiendo hacer similares secciones que solo se parecen en el nivel más común, por ejemplo. En vez de eso, creamos un índice compuesto que pondera cada categoría de la siguiente manera:
 
 ` años_medios_de_estudios <- (
     4.5 * edu_primaria + 9 * edu_eso + 12 *
