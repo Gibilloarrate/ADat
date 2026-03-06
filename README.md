@@ -1,3 +1,5 @@
+# WIP
+
 ## Variable: Nivel de estudios
 
 Queremos incorporar una variable cualitativa ordinal que represente el nivel de estudios de cada sección censal. Para cada una de ellas conocemos el porcenteje de población que ha alcanzado los siguientes niveles de estudios:
