@@ -32,6 +32,7 @@
   library(patchwork)
   library(scales)
   library(Hmisc)
+  
 }
 
 # Leemos la tabla.
